@@ -7,14 +7,14 @@
 package collector
 
 import (
-	"os/exec"
-	"strconv"
-	"strings"
-	_ "net/http/pprof"
-
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	_ "net/http/pprof"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func init() {
@@ -24,7 +24,7 @@ func init() {
 // GZDiskErrorsCollector declares the data type within the prometheus metrics package.
 type GZDiskErrorsCollector struct {
 	gzDiskErrors *prometheus.GaugeVec
-	logger                  log.Logger
+	logger       log.Logger
 }
 
 // NewGZDiskErrorsExporter returns a newly allocated exporter GZDiskErrorsCollector.
@@ -35,7 +35,7 @@ func NewGZDiskErrorsExporter(logger log.Logger) (Collector, error) {
 		gzDiskErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "node_iostat_disk_errs_total",
 			Help: "Number of hardware disk errors.",
-		}, []string{"device", "error_type"}),
+		}, []string{"device", "error_type", "timestamp"}),
 		logger: logger,
 	}, nil
 }
@@ -49,7 +49,7 @@ func (e *GZDiskErrorsCollector) Describe(ch chan<- *prometheus.Desc) {
 func (e *GZDiskErrorsCollector) Update(ch chan<- prometheus.Metric) error {
 	e.iostat()
 	e.gzDiskErrors.Collect(ch)
-	return nil;
+	return nil
 }
 
 func (e *GZDiskErrorsCollector) iostat() {
@@ -57,13 +57,15 @@ func (e *GZDiskErrorsCollector) iostat() {
 	if eerr != nil {
 		level.Error(e.logger).Log("error on executing iostat: %v", eerr)
 	}
-	perr := e.parseIostatOutput(string(out))
+	timestamp := time.Now().UnixMilli()
+	perr := e.parseIostatOutput(string(out), timestamp)
 	if perr != nil {
 		level.Error(e.logger).Log("error on parsing iostat: %v", perr)
 	}
 }
 
-func (e *GZDiskErrorsCollector) parseIostatOutput(out string) error {
+func (e *GZDiskErrorsCollector) parseIostatOutput(out string, timestamp int64) error {
+	tsStr := strconv.FormatInt(timestamp, 10)
 	outlines := strings.Split(out, "\n")
 	l := len(outlines)
 	for _, line := range outlines[2 : l-1] {
@@ -81,9 +83,15 @@ func (e *GZDiskErrorsCollector) parseIostatOutput(out string) error {
 		if err != nil {
 			return err
 		}
-		e.gzDiskErrors.With(prometheus.Labels{"device": deviceName, "error_type": "soft"}).Set(softErr)
-		e.gzDiskErrors.With(prometheus.Labels{"device": deviceName, "error_type": "hard"}).Set(hardErr)
-		e.gzDiskErrors.With(prometheus.Labels{"device": deviceName, "error_type": "trn"}).Set(trnErr)
+		e.gzDiskErrors.With(
+			prometheus.Labels{"device": deviceName, "error_type": "soft", "timestamp": tsStr},
+		).Set(softErr)
+		e.gzDiskErrors.With(
+			prometheus.Labels{"device": deviceName, "error_type": "hard", "timestamp": tsStr},
+		).Set(hardErr)
+		e.gzDiskErrors.With(
+			prometheus.Labels{"device": deviceName, "error_type": "trn", "timestamp": tsStr},
+		).Set(trnErr)
 	}
 	return nil
 }
