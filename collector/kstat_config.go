@@ -1,30 +1,31 @@
 package collector
 
 import (
-	"io/ioutil"
 	"gopkg.in/yaml.v2"
+	"os"
+	"regexp"
 )
 
 type kstatConfig struct {
-	KstatModules [] KstatModule `yaml:"kstat_modules"`
+	KstatModules []KstatModule `yaml:"kstat_modules"`
 }
 
 type KstatModule struct {
-	ID string 		`yaml: "id"`
+	ID         string      `yaml:"id"`
 	KstatNames []KstatName `yaml:"kstat_names"`
 }
 
 type KstatName struct {
-	ID string 		`yaml:"id"`
-	LabelString string 	`yaml:"label_string"`
-	KstatStats []KstatStat `yaml:"kstat_stats"`
+	ID          re          `yaml:"id"`
+	LabelString string      `yaml:"label_string"`
+	KstatStats  []KstatStat `yaml:"kstat_stats"`
 }
 
 type KstatStat struct {
-	ID string 		`yaml:"id"`
-	Help string 		`yaml:"help"`
-	Suffix      string 	`yaml:"suffix"`
-	ScaleFactor float64  	`yaml:"scale_factor"`
+	ID          string  `yaml:"id"`
+	Help        string  `yaml:"help"`
+	Suffix      string  `yaml:"suffix"`
+	ScaleFactor float64 `yaml:"scale_factor"`
 }
 
 func (cfg *kstatConfig) init() error {
@@ -32,19 +33,22 @@ func (cfg *kstatConfig) init() error {
 		cfgFile kstatConfig
 	)
 
-	yamlFile, err := ioutil.ReadFile(kstatCfgFilePath())
+	yamlFile, err := os.ReadFile(kstatCfgFilePath())
 
-
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	err = yaml.Unmarshal(yamlFile, &cfgFile)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	for _, cfgModule := range cfgFile.KstatModules {
-		m := KstatModule {}
+		m := KstatModule{}
 		m.ID = cfgModule.ID
 		for _, cfgName := range cfgModule.KstatNames {
-			n := KstatName {}
+			n := KstatName{}
 			n.ID = cfgName.ID
 			if len(cfgName.LabelString) == 0 {
 				n.LabelString = "instance"
@@ -57,7 +61,7 @@ func (cfg *kstatConfig) init() error {
 				s.ID = cfgStat.ID
 
 				if len(cfgStat.Help) == 0 {
-					s.Help = cfgModule.ID + "::" + cfgName.ID + ":" + cfgStat.ID
+					s.Help = cfgModule.ID + "::" + cfgName.ID.String() + ":" + cfgStat.ID
 				} else {
 					s.Help = cfgStat.Help
 				}
@@ -77,5 +81,22 @@ func (cfg *kstatConfig) init() error {
 		}
 		cfg.KstatModules = append(cfg.KstatModules, m)
 	}
+	return nil
+}
+
+type re struct {
+	*regexp.Regexp
+}
+
+func (r *re) UnmarshalYAML(unmarshal func(any) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+	regex, err := regexp.Compile(s)
+	if err != nil {
+		return err
+	}
+	r.Regexp = regex
 	return nil
 }

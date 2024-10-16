@@ -30,6 +30,7 @@ require (
 	github.com/safchain/ethtool v0.4.1
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
 	golang.org/x/sys v0.21.0
+	gopkg.in/yaml.v2 v2.4.0
 	howett.net/plist v1.0.1
 )
 
@@ -57,5 +58,4 @@ require (
 	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
