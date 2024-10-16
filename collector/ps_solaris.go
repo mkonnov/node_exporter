@@ -125,6 +125,12 @@ func parsePsOutput(psOut string) ([]psLineDesc , error) {
 			continue
 		}
 
+		//Handle the dead process line 
+		//(its enough to distinguish it by the lack of CPU value) 
+		if parsed_line[0] == "-" {
+			continue
+		}
+
 		pcpu, err := strconv.ParseFloat(parsed_line[0], 64)
 		if err != nil { goto exit }
 
