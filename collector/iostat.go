@@ -7,10 +7,10 @@
 package collector
 
 import (
+	_ "net/http/pprof"
 	"os/exec"
 	"strconv"
 	"strings"
-	_ "net/http/pprof"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -24,7 +24,7 @@ func init() {
 // GZDiskErrorsCollector declares the data type within the prometheus metrics package.
 type GZDiskErrorsCollector struct {
 	gzDiskErrors *prometheus.GaugeVec
-	logger                  log.Logger
+	logger       log.Logger
 }
 
 // NewGZDiskErrorsExporter returns a newly allocated exporter GZDiskErrorsCollector.
@@ -49,7 +49,7 @@ func (e *GZDiskErrorsCollector) Describe(ch chan<- *prometheus.Desc) {
 func (e *GZDiskErrorsCollector) Update(ch chan<- prometheus.Metric) error {
 	e.iostat()
 	e.gzDiskErrors.Collect(ch)
-	return nil;
+	return nil
 }
 
 func (e *GZDiskErrorsCollector) iostat() {

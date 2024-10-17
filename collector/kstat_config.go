@@ -1,30 +1,30 @@
 package collector
 
 import (
-	"io/ioutil"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
 type kstatConfig struct {
-	KstatModules [] KstatModule `yaml:"kstat_modules"`
+	KstatModules []KstatModule `yaml:"kstat_modules"`
 }
 
 type KstatModule struct {
-	ID string 		`yaml: "id"`
+	ID         string      `yaml: "id"`
 	KstatNames []KstatName `yaml:"kstat_names"`
 }
 
 type KstatName struct {
-	ID string 		`yaml:"id"`
-	LabelString string 	`yaml:"label_string"`
-	KstatStats []KstatStat `yaml:"kstat_stats"`
+	ID          string      `yaml:"id"`
+	LabelString string      `yaml:"label_string"`
+	KstatStats  []KstatStat `yaml:"kstat_stats"`
 }
 
 type KstatStat struct {
-	ID string 		`yaml:"id"`
-	Help string 		`yaml:"help"`
-	Suffix      string 	`yaml:"suffix"`
-	ScaleFactor float64  	`yaml:"scale_factor"`
+	ID          string  `yaml:"id"`
+	Help        string  `yaml:"help"`
+	Suffix      string  `yaml:"suffix"`
+	ScaleFactor float64 `yaml:"scale_factor"`
 }
 
 func (cfg *kstatConfig) init() error {
@@ -34,17 +34,20 @@ func (cfg *kstatConfig) init() error {
 
 	yamlFile, err := ioutil.ReadFile(kstatCfgFilePath())
 
-
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	err = yaml.Unmarshal(yamlFile, &cfgFile)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	for _, cfgModule := range cfgFile.KstatModules {
-		m := KstatModule {}
+		m := KstatModule{}
 		m.ID = cfgModule.ID
 		for _, cfgName := range cfgModule.KstatNames {
-			n := KstatName {}
+			n := KstatName{}
 			n.ID = cfgName.ID
 			if len(cfgName.LabelString) == 0 {
 				n.LabelString = "instance"

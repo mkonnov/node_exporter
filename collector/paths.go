@@ -14,10 +14,10 @@
 package collector
 
 import (
-	"path/filepath"
-	"strings"
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/procfs"
+	"path/filepath"
+	"strings"
 )
 
 var (

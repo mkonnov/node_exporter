@@ -27,26 +27,26 @@ import (
 import "C"
 
 type cpuCollector struct {
-	cpu_seconds typedDesc
-	cpu_ticks typedDesc
-	cpu_load_intr typedDesc
-	cpumigrate typedDesc
-	iowait typedDesc
-	nthreads typedDesc
-	syscall typedDesc
-	sysexec typedDesc
-	sysfork typedDesc
-	sysread typedDesc
-	sysvfork typedDesc
-	syswrite typedDesc
-	trap typedDesc
-	idlethread typedDesc 
-	intrblk typedDesc
-	intrthread typedDesc
-	inv_swtch typedDesc
+	cpu_seconds    typedDesc
+	cpu_ticks      typedDesc
+	cpu_load_intr  typedDesc
+	cpumigrate     typedDesc
+	iowait         typedDesc
+	nthreads       typedDesc
+	syscall        typedDesc
+	sysexec        typedDesc
+	sysfork        typedDesc
+	sysread        typedDesc
+	sysvfork       typedDesc
+	syswrite       typedDesc
+	trap           typedDesc
+	idlethread     typedDesc
+	intrblk        typedDesc
+	intrthread     typedDesc
+	inv_swtch      typedDesc
 	mutex_adenters typedDesc
-	xcalls typedDesc
-	logger log.Logger
+	xcalls         typedDesc
+	logger         log.Logger
 }
 
 func init() {
@@ -55,7 +55,7 @@ func init() {
 
 func NewCpuCollector(logger log.Logger) (Collector, error) {
 	return &cpuCollector{
-		cpu_seconds: typedDesc{nodeCPUSecondsDesc, 
+		cpu_seconds: typedDesc{nodeCPUSecondsDesc,
 			prometheus.CounterValue},
 
 		cpu_ticks: typedDesc{
@@ -190,8 +190,9 @@ func NewCpuCollector(logger log.Logger) (Collector, error) {
 
 func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 
-	var (	kstatValue *kstat.Named
-		err error
+	var (
+		kstatValue *kstat.Named
+		err        error
 	)
 
 	ncpus := C.sysconf(C._SC_NPROCESSORS_ONLN)
@@ -205,7 +206,9 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 
 	for cpu := 0; cpu < int(ncpus); cpu++ {
 		ksCPU, err := tok.Lookup("cpu", cpu, "sys")
-		if err != nil { goto exit }
+		if err != nil {
+			goto exit
+		}
 
 		for k, v := range map[string]string{
 			"idle":   "cpu_nsec_idle",
@@ -215,7 +218,9 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 			"dtrace": "cpu_nsec_dtrace",
 		} {
 			kstatValue, err = ksCPU.GetNamed(v)
-			if (err != nil) { goto exit }
+			if err != nil {
+				goto exit
+			}
 			ch <- c.cpu_seconds.mustNewConstMetric(
 				float64(kstatValue.UintVal)/1e9, strconv.Itoa(cpu), k)
 		}
@@ -227,32 +232,36 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 			"intr":   "cpu_ticks_wait",
 		} {
 			kstatValue, err = ksCPU.GetNamed(v)
-			if err != nil { goto exit }
+			if err != nil {
+				goto exit
+			}
 			ch <- c.cpu_ticks.mustNewConstMetric(
 				float64(kstatValue.UintVal), strconv.Itoa(cpu), k)
 		}
 
-		for k,inst := range map[string]typedDesc{
-			"cpu_load_intr": c.cpu_load_intr,
-			"cpumigrate": c.cpumigrate,
-			"iowait": c.iowait,
-			"nthreads": c.nthreads,
-			"syscall": c.syscall,
-			"sysexec": c.sysexec,
-			"sysfork": c.sysfork,
-			"sysread": c.sysread,
-			"sysvfork": c.sysvfork,
-			"syswrite": c.syswrite,
-			"trap": c.trap,
-			"idlethread": c.idlethread,
-			"intrblk": c.intrblk,
-			"intrthread": c.intrthread,
-			"inv_swtch": c.inv_swtch,
+		for k, inst := range map[string]typedDesc{
+			"cpu_load_intr":  c.cpu_load_intr,
+			"cpumigrate":     c.cpumigrate,
+			"iowait":         c.iowait,
+			"nthreads":       c.nthreads,
+			"syscall":        c.syscall,
+			"sysexec":        c.sysexec,
+			"sysfork":        c.sysfork,
+			"sysread":        c.sysread,
+			"sysvfork":       c.sysvfork,
+			"syswrite":       c.syswrite,
+			"trap":           c.trap,
+			"idlethread":     c.idlethread,
+			"intrblk":        c.intrblk,
+			"intrthread":     c.intrthread,
+			"inv_swtch":      c.inv_swtch,
 			"mutex_adenters": c.mutex_adenters,
-			"xcalls": c.xcalls,
+			"xcalls":         c.xcalls,
 		} {
 			kstatValue, err = ksCPU.GetNamed(k)
-			if err != nil { goto exit }
+			if err != nil {
+				goto exit
+			}
 			ch <- inst.mustNewConstMetric(
 				float64(kstatValue.UintVal), strconv.Itoa(cpu))
 		}
