@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/node_exporter/collector/metric"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -37,47 +38,47 @@ func NewNetCollector(logger log.Logger) (Collector, error) {
 		iPackets: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "ipackets"),
 			Help: "Link input packets",
-		}, []string{"link", "timestamp"}),
+		}, metric.NewLabelNames("link", "timestamp")),
 		oPackets: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "opackets"),
 			Help: "Link output packets",
-		}, []string{"link", "timestamp"}),
+		}, metric.NewLabelNames("link", "timestamp")),
 		rBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "rbytes"),
 			Help: "Link received bytes",
-		}, []string{"link", "timestamp"}),
+		}, metric.NewLabelNames("link", "timestamp")),
 		oBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "obytes"),
 			Help: "Link transmitted bytes",
-		}, []string{"link", "timestamp"}),
+		}, metric.NewLabelNames("link", "timestamp")),
 		iErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "ierrors"),
 			Help: "Link receive errors",
-		}, []string{"link", "timestamp"}),
+		}, metric.NewLabelNames("link", "timestamp")),
 		oErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "oerrors"),
 			Help: "Link output errors",
-		}, []string{"link", "timestamp"}),
+		}, metric.NewLabelNames("link", "timestamp")),
 		class: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "class"),
 			Help: "Link class",
-		}, []string{"link", "class", "timestamp"}),
+		}, metric.NewLabelNames("link", "class", "timestamp")),
 		mtu: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "mtu"),
 			Help: "Link MTU",
-		}, []string{"link", "mtu", "timestamp"}),
+		}, metric.NewLabelNames("link", "mtu", "timestamp")),
 		state: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "state"),
 			Help: "Link state",
-		}, []string{"link", "state", "timestamp"}),
+		}, metric.NewLabelNames("link", "state", "timestamp")),
 		bridge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "bridge"),
 			Help: "Link bridge",
-		}, []string{"link", "bridge", "timestamp"}),
+		}, metric.NewLabelNames("link", "bridge", "timestamp")),
 		over: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "over"),
 			Help: "Link over",
-		}, []string{"link", "over", "timestamp"}),
+		}, metric.NewLabelNames("link", "over", "timestamp")),
 	}, nil
 }
 
@@ -107,11 +108,21 @@ func (c *netCollector) dladmConfGet() error {
 
 		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-		c.class.With(prometheus.Labels{"link": link, "class": class, "timestamp": timestamp}).Set(0)
-		c.mtu.With(prometheus.Labels{"link": link, "mtu": mtu, "timestamp": timestamp}).Set(0)
-		c.state.With(prometheus.Labels{"link": link, "state": state, "timestamp": timestamp}).Set(0)
-		c.bridge.With(prometheus.Labels{"link": link, "bridge": bridge, "timestamp": timestamp}).Set(0)
-		c.over.With(prometheus.Labels{"link": link, "over": over, "timestamp": timestamp}).Set(0)
+		c.class.With(
+			metric.NewLabels(map[string]string{"link": link, "class": class, "timestamp": timestamp}),
+		).Set(0)
+		c.mtu.With(
+			metric.NewLabels(map[string]string{"link": link, "mtu": mtu, "timestamp": timestamp}),
+		).Set(0)
+		c.state.With(
+			metric.NewLabels(map[string]string{"link": link, "state": state, "timestamp": timestamp}),
+		).Set(0)
+		c.bridge.With(
+			metric.NewLabels(map[string]string{"link": link, "bridge": bridge, "timestamp": timestamp}),
+		).Set(0)
+		c.over.With(
+			metric.NewLabels(map[string]string{"link": link, "over": over, "timestamp": timestamp}),
+		).Set(0)
 	}
 	return nil
 }
@@ -163,12 +174,24 @@ func (c *netCollector) dladmStatsGet() error {
 
 		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-		c.iPackets.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(ipackets))
-		c.oPackets.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(opackets))
-		c.rBytes.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(rbytes))
-		c.oBytes.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(obytes))
-		c.iErrors.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(ierrors))
-		c.oErrors.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(oerrors))
+		c.iPackets.With(
+			metric.NewLabels(map[string]string{"link": link, "timestamp": timestamp}),
+		).Set(float64(ipackets))
+		c.oPackets.With(
+			metric.NewLabels(map[string]string{"link": link, "timestamp": timestamp}),
+		).Set(float64(opackets))
+		c.rBytes.With(
+			metric.NewLabels(map[string]string{"link": link, "timestamp": timestamp}),
+		).Set(float64(rbytes))
+		c.oBytes.With(
+			metric.NewLabels(map[string]string{"link": link, "timestamp": timestamp}),
+		).Set(float64(obytes))
+		c.iErrors.With(
+			metric.NewLabels(map[string]string{"link": link, "timestamp": timestamp}),
+		).Set(float64(ierrors))
+		c.oErrors.With(
+			metric.NewLabels(map[string]string{"link": link, "timestamp": timestamp}),
+		).Set(float64(oerrors))
 		ipackets = ipackets
 		opackets = opackets
 		rbytes = rbytes

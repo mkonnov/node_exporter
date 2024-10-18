@@ -7,10 +7,11 @@
 package collector
 
 import (
+	"github.com/prometheus/node_exporter/collector/metric"
+	_ "net/http/pprof"
 	"os/exec"
 	"strconv"
 	"strings"
-	_ "net/http/pprof"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -24,7 +25,7 @@ func init() {
 // GZDiskErrorsCollector declares the data type within the prometheus metrics package.
 type GZDiskErrorsCollector struct {
 	gzDiskErrors *prometheus.GaugeVec
-	logger                  log.Logger
+	logger       log.Logger
 }
 
 // NewGZDiskErrorsExporter returns a newly allocated exporter GZDiskErrorsCollector.
@@ -35,7 +36,7 @@ func NewGZDiskErrorsExporter(logger log.Logger) (Collector, error) {
 		gzDiskErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "node_iostat_disk_errs_total",
 			Help: "Number of hardware disk errors.",
-		}, []string{"device", "error_type"}),
+		}, metric.NewLabelNames("device", "error_type")),
 		logger: logger,
 	}, nil
 }
@@ -49,7 +50,7 @@ func (e *GZDiskErrorsCollector) Describe(ch chan<- *prometheus.Desc) {
 func (e *GZDiskErrorsCollector) Update(ch chan<- prometheus.Metric) error {
 	e.iostat()
 	e.gzDiskErrors.Collect(ch)
-	return nil;
+	return nil
 }
 
 func (e *GZDiskErrorsCollector) iostat() {
@@ -81,9 +82,15 @@ func (e *GZDiskErrorsCollector) parseIostatOutput(out string) error {
 		if err != nil {
 			return err
 		}
-		e.gzDiskErrors.With(prometheus.Labels{"device": deviceName, "error_type": "soft"}).Set(softErr)
-		e.gzDiskErrors.With(prometheus.Labels{"device": deviceName, "error_type": "hard"}).Set(hardErr)
-		e.gzDiskErrors.With(prometheus.Labels{"device": deviceName, "error_type": "trn"}).Set(trnErr)
+		e.gzDiskErrors.With(
+			metric.NewLabels(map[string]string{"device": deviceName, "error_type": "soft"}),
+		).Set(softErr)
+		e.gzDiskErrors.With(
+			metric.NewLabels(map[string]string{"device": deviceName, "error_type": "hard"}),
+		).Set(hardErr)
+		e.gzDiskErrors.With(
+			metric.NewLabels(map[string]string{"device": deviceName, "error_type": "trn"}),
+		).Set(trnErr)
 	}
 	return nil
 }
