@@ -3,6 +3,7 @@ package metric
 import (
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus"
+	"slices"
 )
 
 const timestampLabelName = "timestamp"
@@ -14,26 +15,11 @@ var isTimestampLabelDisabled = kingpin.Flag(
 ).Default("false").Bool()
 
 func NewLabelNames(labels ...string) []string {
-	shouldResize := false
-
-	writeI := 0
-	for _, label := range labels {
-		if label != timestampLabelName {
-			labels[writeI] = label
-			writeI++
-			continue
-		}
-		if *isTimestampLabelDisabled {
-			shouldResize = true
-		} else {
-			break
-		}
+	if *isTimestampLabelDisabled {
+		labels = slices.DeleteFunc(labels, func(e string) bool {
+			return e == "timestamp"
+		})
 	}
-
-	if shouldResize {
-		labels = labels[:len(labels)-1]
-	}
-
 	return labels
 }
 
