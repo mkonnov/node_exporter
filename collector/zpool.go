@@ -554,22 +554,18 @@ func (e *GZZpoolListCollector) parseZfsGetOutput(out string) error {
 	return nil
 }
 
-func (e *GZZpoolListCollector) helperZpoolWithSet(pool string, vdev string, 
-		vec *prometheus.GaugeVec, val string, scale float64) error {
-	var pval float64
-	var err error
-	if val == "-" {
-		pval = -1
-		err = nil
-	} else {
-		pval, err = strconv.ParseFloat(val, 64)
+func (e *GZZpoolListCollector) helperZpoolWithSet(
+	pool string, vdev string, vec *prometheus.GaugeVec, val string, scale float64,
+) error {
+	if val != "-" {
+		pval, err := strconv.ParseFloat(val, 64)
 		if err != nil {
 			level.Error(e.logger).Log("error on parsing zpool iostat: %v", err)
 			return err
 		}
 		pval = pval * scale
+		vec.With(prometheus.Labels{"pool": pool, "vdev": vdev}).Set(pval)
 	}
-	vec.With(prometheus.Labels{"pool": pool, "vdev": vdev}).Set(pval)
 	return nil
 }
 
